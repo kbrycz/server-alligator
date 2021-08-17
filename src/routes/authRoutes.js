@@ -10,15 +10,12 @@ const router = express.Router()
 router.post('/signup', async (req, res) => {
     const {username, password} = req.body
 
-    console.log(username, password)
-
     if (!username || !password) {
         res.status(422).send({error: 'Must fill out all fields'})
     }
     try {
         const user = new User({username, password})
         await user.save()
-        console.log("after save user")
         const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY')
         console.log("user signed up")
         res.send({token})

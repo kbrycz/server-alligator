@@ -1,6 +1,7 @@
 // Gets the models all set up
 require('./models/User')
 
+
 // import all necessary dependencies
 const express = require('express')
 const mongoose = require('mongoose')
@@ -10,6 +11,12 @@ const authRoutes = require('./routes/authRoutes')
 
 // Set up app object to use express library
 const app = express()
+const http = require('http').Server(app);
+const io = require('socket.io')(http, {
+    pingInterval: 10000,
+    pingTimeout: (1000 * 60) * 30,
+    cookie: false
+});
 
 // Basic api settings
 app.use(function(req, res, next) {
@@ -45,7 +52,35 @@ mongoose.connection.on('error', (err) => {
     console.log('Error connecting to mongo: ' + err)
 })
 
+// ****************SOCKET FUNCTIONS**********************
+
+let rooms = {}
+io.on('connection', (socket) => {
+
+    console.log('We have a connection!');
+
+    // -----------------Game Creation and joining-----------------
+    socket.on('createRoom', () => {
+        let status = true
+        let roomName = ''
+        while (status) {
+            roomName = (Math.floor(100000 + Math.random() * 900000)).toString()
+            if (!(roomName in rooms)) {
+                status = false
+                rooms[roomName] = {hostSocket: socket.id}
+                socket.join(roomName)
+                console.log('created room: ' + roomName);
+                io.in(roomName).emit('createRoom', roomName);
+            }
+        }
+    });
+});
+
+
+
 // Starts the app to listen on port 3000
-app.listen(3000, () => {
-    console.log('Listening on port 3000')
-})
+// app.listen(3000, () => {
+//     console.log('Listening on port 3000')
+// })
+
+http.listen(3000, () => console.log('listening on port 3000'));
