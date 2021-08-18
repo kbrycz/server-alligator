@@ -8,13 +8,13 @@ const router = express.Router()
 
 // Creates a user in the mongodb database and returns token to user 
 router.post('/signup', async (req, res) => {
-    const {username, password} = req.body
+    const {username, password, first, last} = req.body
 
-    if (!username || !password) {
+    if (!username || !password || !first || !last) {
         res.status(422).send({error: 'Must fill out all fields'})
     }
     try {
-        const user = new User({username, password})
+        const user = new User({username, password, first, last})
         await user.save()
         const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY')
         console.log("user signed up")

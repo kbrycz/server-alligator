@@ -11,6 +11,14 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    first: {
+        type: String,
+        required: true
+    },
+    last: {
+        type: String,
+        required: true
+    },
 })
 
 // Makes sure that the user's password is hashed before entering db
