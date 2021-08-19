@@ -64,7 +64,7 @@ io.on('connection', (socket) => {
         let status = true
         let roomName = ''
         while (status) {
-            roomName = (Math.floor(100000 + Math.random() * 900000)).toString()
+            roomName = (Math.floor(10000 + Math.random() * 90000)).toString()
             if (!(roomName in rooms)) {
                 status = false
                 rooms[roomName] = {hostSocket: socket.id}
@@ -74,10 +74,24 @@ io.on('connection', (socket) => {
             }
         }
     });
-});
 
+    socket.on('isRoomAvailable', (players) => {
+        if (obj.code in rooms) {
+            console.log("Room found with code " + obj.code)
+            socket.join(obj.code)
+            io.to(rooms[obj.code].hostSocket).emit('hostAddPlayer', obj);
+        } else {
+            console.log("No room found with code " + roomName)
+            socket.emit('roomNotFound')
+        }     
+    })
 
+    socket.on('hostSendPlayersArray', (obj) => {
+        console.log("Got obj from host. Updating array for everyone")
+        socket.to(obj.code).emit('updatePlayersArray', obj.players)
+    })
 
+})
 // Starts the app to listen on port 3000
 // app.listen(3000, () => {
 //     console.log('Listening on port 3000')
