@@ -54,7 +54,7 @@ mongoose.connection.on('error', (err) => {
 
 // ****************SOCKET FUNCTIONS**********************
 
-let rooms = {}
+let rooms = new Object()
 io.on('connection', (socket) => {
 
     console.log('We have a connection!');
@@ -75,21 +75,34 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('isRoomAvailable', (players) => {
+    socket.on('isRoomAvailable', (obj) => {
         if (obj.code in rooms) {
             console.log("Room found with code " + obj.code)
             socket.join(obj.code)
             io.to(rooms[obj.code].hostSocket).emit('hostAddPlayer', obj);
         } else {
-            console.log("No room found with code " + roomName)
+            console.log("No room found with code " + obj.code)
             socket.emit('roomNotFound')
         }     
     })
 
     socket.on('hostSendPlayersArray', (obj) => {
         console.log("Got obj from host. Updating array for everyone")
-        socket.to(obj.code).emit('updatePlayersArray', obj.players)
+        io.to(obj.code).emit('updatePlayersArray', obj.players)
     })
+
+    // -----------------Leaving The Game-----------------
+    socket.on('hostEndingGame', (code) => {
+        console.log("Host decided to leave game. Erasing game from list and notifying users")
+        delete rooms[code]
+        socket.to(code).emit("hostEndedGame")
+    })
+
+    socket.on('playerLeavingLobby', (obj) => {
+        console.log("Player has left the lobby. Letting others know who left by id.")
+        socket.to(obj.code).emit("playerLeftLobby", obj.id)
+    })
+
 
 })
 // Starts the app to listen on port 3000
