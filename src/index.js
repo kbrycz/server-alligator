@@ -55,6 +55,16 @@ mongoose.connection.on('error', (err) => {
 // ****************SOCKET FUNCTIONS**********************
 
 let rooms = new Object()
+let socketRooms = new Object()
+
+// Get list of words
+let words = []
+var fs = require('fs');
+tempWords = fs.readFileSync('words.txt').toString().split("\n");
+for (word in tempWords) {
+    words.push(tempWords[word].replace("\r", ""))
+}
+
 io.on('connection', (socket) => {
 
     console.log('We have a connection!');
@@ -67,8 +77,9 @@ io.on('connection', (socket) => {
             roomName = (Math.floor(10000 + Math.random() * 90000)).toString()
             if (!(roomName in rooms)) {
                 status = false
-                rooms[roomName] = {hostSocket: socket.id}
+                rooms[roomName] = socket.id
                 socket.join(roomName)
+                socketRooms[socket.id] = roomName
                 console.log('created room: ' + roomName);
                 io.in(roomName).emit('createRoom', roomName);
             }
@@ -79,7 +90,8 @@ io.on('connection', (socket) => {
         if (obj.code in rooms) {
             console.log("Room found with code " + obj.code)
             socket.join(obj.code)
-            io.to(rooms[obj.code].hostSocket).emit('hostAddPlayer', obj);
+            socketRooms[socket.id] = obj.code
+            io.to(rooms[obj.code]).emit('hostAddPlayer', obj);
         } else {
             console.log("No room found with code " + obj.code)
             socket.emit('roomNotFound')
@@ -95,19 +107,50 @@ io.on('connection', (socket) => {
     socket.on('hostEndingGame', (code) => {
         console.log("Host decided to leave game. Erasing game from list and notifying users")
         delete rooms[code]
+        delete socketRooms[socket.id]
         socket.to(code).emit("hostEndedGame")
     })
 
     socket.on('playerLeavingLobby', (obj) => {
         console.log("Player has left the lobby. Letting others know who left by id.")
+        delete socketRooms[socket.id]
         socket.to(obj.code).emit("playerLeftLobby", obj.id)
     })
 
+    socket.on('disconnect', () => {
+        console.log("user has disconnected")
+        const code = socketRooms[socket.id]
+        if (rooms[code] === socket.id) {
+            console.log("Host is ending the game")
+            delete rooms[code]
+            deleteByValue(code)
+            socket.to(code).emit("hostEndedGame")
+        } else {
+            console.log("A normal player has disconnected from the game")
+            delete socketRooms[socket.id]
+            socket.to(code).emit("playerLeftLobby", socket.id)
+        }
+      })
 
+       // -----------------Playing The Game-----------------
+    socket.on('startGame', (code) => {
+        console.log("Host is starting the game")
+        let wordNum = Math.floor(Math.random() * words.length);
+        word = words[wordNum]
+        io.in(code).emit("hostStartedGame", word)
+    })
 })
-// Starts the app to listen on port 3000
-// app.listen(3000, () => {
-//     console.log('Listening on port 3000')
-// })
+
+
+// HELPER FUNCTIONS
+
+function deleteByValue(val) {
+    for (let s in socketRooms) {
+        if (socketRooms.hasOwnProperty(s) && socketRooms[s] === val) {
+            delete socketRooms[s];
+        }
+    }
+}
+
 
 http.listen(3000, () => console.log('listening on port 3000'));
