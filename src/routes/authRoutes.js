@@ -18,7 +18,7 @@ router.post('/signup', async (req, res) => {
         await user.save()
         const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY')
         console.log("user signed up")
-        res.send({token})
+        res.send({token: token, id: user._id})
     }
     catch (err) {
         return res.status(422).send({error: err.message})
@@ -41,10 +41,64 @@ router.post('/signin', async (req, res) => {
         await user.comparePassword(password)
         const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY')
         console.log("user signed in")
-        res.send({token, username: user.username, first: user.first, last: user.last})
+        res.send({token, username: user.username, first: user.first, last: user.last, id: user._id})
     }
     catch (err) {
         return res.status(422).send({error: 'Invalid email or password'})
+    }
+})
+
+// changes the account info of the user and returns token to user
+router.post('/changeAccountInfo', async (req, res) => {
+    const {username, first, last, id} = req.body
+
+    if (!username || !first || !last || !id) {
+        res.status(422).send({error: 'Must fill out all fields'})
+    }
+    try {
+        User.findOne({_id: id}, (err, user) => {
+            user.username = username
+            user.first = first
+            user.last - last
+            user.save(() => {
+                const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY')
+                console.log("user updated account info")
+                res.send({token})
+            })
+        })
+    }
+    catch (err) {
+        return res.status(422).send({error: err.message})
+    }
+})
+
+// Checks if old password is the same and then changes it to new password
+router.post('/changePassword', async (req, res) => {
+    const {oldPassword, newPassword, id} = req.body
+
+    if (!oldPassword || !newPassword || !id) {
+        res.status(422).send({error: 'Must fill out all fields'})
+    }
+    try {
+        User.findOne({_id: id}, async (err, user) => {
+            try {
+                await user.comparePassword(oldPassword)
+                user.password = newPassword
+                user.save(() => {
+                    const token = jwt.sign({userId: user._id}, 'MY_SECRET_KEY')
+                    console.log("user updated password")
+                    res.send({token})
+                })
+            }
+            catch (err) {
+                console.log("Old password was not correct")
+                return res.status(422).send({error: "Old password was not correct"})
+            }
+        })
+    }
+    catch (err) {
+        console.log("helloerrer")
+        return res.status(422).send({error: err.message})
     }
 })
 
