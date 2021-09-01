@@ -1,5 +1,6 @@
 // Gets the models all set up
 require('./models/User')
+require('./models/Game')
 
 
 // import all necessary dependencies
@@ -8,6 +9,7 @@ const mongoose = require('mongoose')
 
 // import all of the api routes
 const authRoutes = require('./routes/authRoutes')
+const gameRoutes = require('./routes/gameRoutes')
 
 // Set up app object to use express library
 const app = express()
@@ -33,6 +35,7 @@ app.use(express.json({ limit: '15MB' }));
 
 // Get all of the routes set up
 app.use(authRoutes)
+app.use(gameRoutes)
 
 // Get mongodb all set up with mongoose
 const mongoUri = 'mongodb+srv://admin:pass@cluster0.qp5yn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
