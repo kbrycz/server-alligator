@@ -142,6 +142,13 @@ io.on('connection', (socket) => {
         word = words[wordNum]
         io.in(code).emit("hostStartedGame", word)
     })
+    socket.on('startTimer', (code) => {
+        console.log("Host is setting the timer for everyone")
+        setTimeout(() => {
+            io.in(code).emit("timerDone")
+        }, 5000)
+        
+    })
 })
 
 

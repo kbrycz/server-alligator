@@ -21,7 +21,8 @@ router.post('/signup', async (req, res) => {
         res.send({token: token, id: user._id})
     }
     catch (err) {
-        return res.status(422).send({error: err.message})
+        console.log(err.code)
+        return res.send({error: err.code})
     }
 })
 
@@ -56,7 +57,11 @@ router.post('/changeAccountInfo', async (req, res) => {
         res.status(422).send({error: 'Must fill out all fields'})
     }
     try {
-        User.findOne({_id: id}, (err, user) => {
+        User.findOne({_id: id}, async (err, user) => {
+            const userWithName = await User.findOne({username: username})
+            if (userWithName) {
+                return res.send({error: 'Username already in use'})
+            }
             user.username = username
             user.first = first
             user.last - last

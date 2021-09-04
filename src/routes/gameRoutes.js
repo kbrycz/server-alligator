@@ -32,19 +32,46 @@ router.post('/submitAnswers', async (req, res) => {
         return
     }
     try {
-        Game.findOne({code: code}, (err, game) => {
-            let tempPlayers = game.players
+
+        // Finds the game to get the players array
+        Game.findOne({code: code}, async (err, game) => {
+            let tempPlayers = game.players.slice()
             for (let i = 0; i < game.players.length; ++i) {
                 if (game.players[i].id === id) {
-                    tempPlayers[i].answers = answers
+                    tempPlayers[i].answers = answers.slice()
                     break
                 }
             }
-            game.players = tempPlayers
-            game.save(() => {
-                console.log("Players obj successfully updated")
+            // updates the game players array to new array
+            try {
+                await Game.updateOne({code: code}, {players: tempPlayers})
                 res.send({players: tempPlayers})
-            })
+            }
+            catch (err2) {
+                console.log(err2)
+                return res.status(422).send({error: err2.message})
+            }
+        })
+
+        
+    }
+    catch (err) {
+        return res.status(422).send({error: err.message})
+    }
+})
+
+// Gets other player data for the end of game lobby
+router.get('/otherPlayersData', async (req, res) => {
+    const {code} = req.query
+
+    if (!code) {
+        res.status(422).send({error: 'Did not receive game code from user'})
+        return
+    }
+    try {
+        Game.findOne({code: code}, (err, game) => {
+            console.log("sending players array to all players")
+            res.send({players: game.players})
         })
     }
     catch (err) {
