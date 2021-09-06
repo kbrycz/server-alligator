@@ -80,7 +80,9 @@ io.on('connection', (socket) => {
             roomName = (Math.floor(10000 + Math.random() * 90000)).toString()
             if (!(roomName in rooms)) {
                 status = false
-                rooms[roomName] = socket.id
+                rooms[roomName]= new Object()
+                rooms[roomName].hostId = socket.id
+                rooms[roomName].isStarted = false
                 socket.join(roomName)
                 socketRooms[socket.id] = roomName
                 console.log('created room: ' + roomName);
@@ -91,13 +93,17 @@ io.on('connection', (socket) => {
 
     socket.on('isRoomAvailable', (obj) => {
         if (obj.code in rooms) {
+            if (rooms[obj.code].isStarted) {
+                console.log("Room has already started: " + obj.code)
+                socket.emit('roomNotFound', false)
+            }
             console.log("Room found with code " + obj.code)
             socket.join(obj.code)
             socketRooms[socket.id] = obj.code
-            io.to(rooms[obj.code]).emit('hostAddPlayer', obj);
+            io.to(rooms[obj.code].hostId).emit('hostAddPlayer', obj);
         } else {
             console.log("No room found with code " + obj.code)
-            socket.emit('roomNotFound')
+            socket.emit('roomNotFound', true)
         }     
     })
 
@@ -140,6 +146,7 @@ io.on('connection', (socket) => {
         console.log("Host is starting the game")
         let wordNum = Math.floor(Math.random() * words.length);
         word = words[wordNum]
+        rooms[code].isStarted = true
         io.in(code).emit("hostStartedGame", word)
     })
     socket.on('startTimer', (code) => {

@@ -51,7 +51,7 @@ router.post('/signin', async (req, res) => {
 
 // changes the account info of the user and returns token to user
 router.post('/changeAccountInfo', async (req, res) => {
-    const {username, first, last, id} = req.body
+    const {username, first, last, id, oldUsername} = req.body
 
     if (!username || !first || !last || !id) {
         res.status(422).send({error: 'Must fill out all fields'})
@@ -59,10 +59,17 @@ router.post('/changeAccountInfo', async (req, res) => {
     try {
         User.findOne({_id: id}, async (err, user) => {
             const userWithName = await User.findOne({username: username})
-            if (userWithName) {
-                return res.send({error: 'Username already in use'})
-            }
-            user.username = username
+            if (username !== oldUsername && userWithName) {
+                console.log("1")
+                if (userWithName) {
+                    console.log("2")
+                    return res.send({error: 'Username already in use'})
+                } else {
+                    console.log("3")
+                    user.username = username
+                }
+            } 
+
             user.first = first
             user.last - last
             user.save(() => {
