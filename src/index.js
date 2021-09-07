@@ -82,7 +82,9 @@ io.on('connection', (socket) => {
                 status = false
                 rooms[roomName]= new Object()
                 rooms[roomName].hostId = socket.id
+                console.log(rooms[roomName].hostId)
                 rooms[roomName].isStarted = false
+                rooms[roomName].numPlayers = 1
                 socket.join(roomName)
                 socketRooms[socket.id] = roomName
                 console.log('created room: ' + roomName);
@@ -93,17 +95,27 @@ io.on('connection', (socket) => {
 
     socket.on('isRoomAvailable', (obj) => {
         if (obj.code in rooms) {
+            // Check if room has already started
             if (rooms[obj.code].isStarted) {
                 console.log("Room has already started: " + obj.code)
-                socket.emit('roomNotFound', false)
+                return socket.emit('roomNotFound', 2)
             }
+            // Check if room is full
+            const MAX_USERS = 11
+            console.log(rooms[obj.code].numPlayers)
+            if (rooms[obj.code].numPlayers >= MAX_USERS) {
+                console.log("Room is full: " + obj.code)
+                return socket.emit('roomNotFound', 1)
+            }
+            // Allow user to join room
             console.log("Room found with code " + obj.code)
             socket.join(obj.code)
             socketRooms[socket.id] = obj.code
+            rooms[obj.code].numPlayers += 1
             io.to(rooms[obj.code].hostId).emit('hostAddPlayer', obj);
         } else {
             console.log("No room found with code " + obj.code)
-            socket.emit('roomNotFound', true)
+            socket.emit('roomNotFound', 0)
         }     
     })
 
@@ -115,29 +127,36 @@ io.on('connection', (socket) => {
     // -----------------Leaving The Game-----------------
     socket.on('hostEndingGame', (code) => {
         console.log("Host decided to leave game. Erasing game from list and notifying users")
-        delete rooms[code]
-        delete socketRooms[socket.id]
         socket.to(code).emit("hostEndedGame")
     })
 
     socket.on('playerLeavingLobby', (obj) => {
         console.log("Player has left the lobby. Letting others know who left by id.")
-        delete socketRooms[socket.id]
+        
+        if (obj.code in rooms) {
+            rooms[obj.code].numPlayers -= 1
+        }
         socket.to(obj.code).emit("playerLeftLobby", obj.id)
     })
 
     socket.on('disconnect', () => {
         console.log("user has disconnected")
         const code = socketRooms[socket.id]
-        if (rooms[code] === socket.id) {
+        if (rooms[code].hostId === socket.id) {
             console.log("Host is ending the game")
-            delete rooms[code]
-            deleteByValue(code)
-            socket.to(code).emit("hostEndedGame")
+            rooms[code].numPlayers -= 1
+            if (!rooms[code].isStarted) {
+                socket.to(code).emit("hostEndedGame")
+            }
+            delete socketRooms[socket.id]
         } else {
             console.log("A normal player has disconnected from the game")
+            rooms[code].numPlayers -= 1
+            if (!rooms[code].isStarted) {
+                socket.to(code).emit("playerLeftLobby", socket.id)
+            }
+            
             delete socketRooms[socket.id]
-            socket.to(code).emit("playerLeftLobby", socket.id)
         }
       })
 
@@ -145,7 +164,7 @@ io.on('connection', (socket) => {
     socket.on('startGame', (code) => {
         console.log("Host is starting the game")
         let wordNum = Math.floor(Math.random() * words.length);
-        word = words[wordNum]
+        let word = words[wordNum]
         rooms[code].isStarted = true
         io.in(code).emit("hostStartedGame", word)
     })
