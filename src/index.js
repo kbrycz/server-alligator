@@ -16,8 +16,11 @@ const app = express()
 const http = require('http').Server(app);
 const io = require('socket.io')(http, {
     pingInterval: 10000,
-    pingTimeout: (1000 * 60) * 30,
-    cookie: false
+    pingTimeout: (1000 * 60) * 60,
+    cookie: false,
+    'reconnection': true,
+    'reconnectionDelay': 500,
+    'reconnectionAttempts': 10
 });
 
 // Basic api settings
@@ -125,40 +128,45 @@ io.on('connection', (socket) => {
     })
 
     // -----------------Leaving The Game-----------------
-    socket.on('hostEndingGame', (code) => {
-        console.log("Host decided to leave game. Erasing game from list and notifying users")
-        socket.to(code).emit("hostEndedGame")
+    // If player clicks the leaving game button
+    socket.on('leavingGame', () => {
+        console.log("Player clicked the leaving game button. Disconnecting their socket")
+        socket.disconnect()
     })
 
-    socket.on('playerLeavingLobby', (obj) => {
-        console.log("Player has left the lobby. Letting others know who left by id.")
-        
-        if (obj.code in rooms) {
-            rooms[obj.code].numPlayers -= 1
-        }
-        socket.to(obj.code).emit("playerLeftLobby", obj.id)
-    })
-
+    // Player has disconnected from the game
     socket.on('disconnect', () => {
         console.log("user has disconnected")
         const code = socketRooms[socket.id]
+        if (!code || !code in rooms) {
+            return
+        }
+
+        // Host is the one who disconnected
         if (rooms[code].hostId === socket.id) {
             console.log("Host is ending the game")
             rooms[code].numPlayers -= 1
-            if (!rooms[code].isStarted) {
-                socket.to(code).emit("hostEndedGame")
-            }
+
+            socket.to(code).emit("hostEndedGame")
             delete socketRooms[socket.id]
-        } else {
+            if (rooms[code].hasOwnProperty('numPlayers') && rooms[code].numPlayers < 1) {
+                console.log("deleting room")
+                delete rooms[code]
+            }
+        } 
+        // Normal player disconnected
+        else {
             console.log("A normal player has disconnected from the game")
             rooms[code].numPlayers -= 1
-            if (!rooms[code].isStarted) {
-                socket.to(code).emit("playerLeftLobby", socket.id)
-            }
-            
+
+            socket.to(code).emit("playerLeftLobby", socket.id)
             delete socketRooms[socket.id]
+            if (rooms[code].hasOwnProperty('numPlayers') && rooms[code].numPlayers < 1) {
+                console.log("deleting room")
+                delete rooms[code]
+            }
         }
-      })
+    })
 
        // -----------------Playing The Game-----------------
     socket.on('startGame', (code) => {
@@ -172,7 +180,7 @@ io.on('connection', (socket) => {
         console.log("Host is setting the timer for everyone")
         setTimeout(() => {
             io.in(code).emit("timerDone")
-        }, 5000)
+        }, 10000)
         
     })
 })
