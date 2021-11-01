@@ -180,7 +180,7 @@ io.on('connection', (socket) => {
         console.log("Host is setting the timer for everyone")
         setTimeout(() => {
             io.in(code).emit("timerDone")
-        }, 10000)
+        }, 5000)
         
     })
 })
