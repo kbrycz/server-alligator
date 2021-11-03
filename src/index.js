@@ -10,6 +10,8 @@ const mongoose = require('mongoose')
 // import all of the api routes
 const authRoutes = require('./routes/authRoutes')
 const gameRoutes = require('./routes/gameRoutes')
+const secrets = require('./secrets')
+
 
 // Set up app object to use express library
 const app = express()
@@ -41,8 +43,7 @@ app.use(authRoutes)
 app.use(gameRoutes)
 
 // Get mongodb all set up with mongoose
-const mongoUri = 'mongodb+srv://alligatorgames:Showmethemoney123!@alligatorseverlessinsta.pheja.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
-mongoose.connect(mongoUri, {
+mongoose.connect(secrets.mongoUri, {
     useNewUrlParser: true,
     useCreateIndex: true,
     useUnifiedTopology: true
