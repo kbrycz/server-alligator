@@ -45,7 +45,6 @@ app.use(gameRoutes)
 // Get mongodb all set up with mongoose
 mongoose.connect(secrets.mongoUri, {
     useNewUrlParser: true,
-    useCreateIndex: true,
     useUnifiedTopology: true
 })
 
