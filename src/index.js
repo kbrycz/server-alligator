@@ -41,7 +41,7 @@ app.use(authRoutes)
 app.use(gameRoutes)
 
 // Get mongodb all set up with mongoose
-const mongoUri = 'mongodb+srv://admin:pass@cluster0.qp5yn.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
+const mongoUri = 'mongodb+srv://alligatorgames:Showmethemoney123!@alligatorseverlessinsta.pheja.mongodb.net/myFirstDatabase?retryWrites=true&w=majority'
 mongoose.connect(mongoUri, {
     useNewUrlParser: true,
     useCreateIndex: true,
