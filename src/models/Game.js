@@ -8,8 +8,8 @@ const gameSchema = new mongoose.Schema({
     code: {
         type: String,
         required: true,
-        unique: true
+        index: {unique: true, dropDups: true}
     },
+    createdAt: { type: Date, expires: '3000m', default: Date.now }
 })
-
 mongoose.model('Game', gameSchema)

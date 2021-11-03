@@ -76,6 +76,8 @@ io.on('connection', (socket) => {
     console.log('We have a connection!');
 
     // -----------------Game Creation and joining-----------------
+
+    // Try to create a room
     socket.on('createRoom', () => {
         let status = true
         let roomName = ''
@@ -96,6 +98,7 @@ io.on('connection', (socket) => {
         }
     });
 
+    // Check if room is available
     socket.on('isRoomAvailable', (obj) => {
         if (obj.code in rooms) {
             // Check if room has already started
@@ -122,12 +125,14 @@ io.on('connection', (socket) => {
         }     
     })
 
+    // Sends players array to everyone
     socket.on('hostSendPlayersArray', (obj) => {
         console.log("Got obj from host. Updating array for everyone")
         io.to(obj.code).emit('updatePlayersArray', obj.players)
     })
 
     // -----------------Leaving The Game-----------------
+
     // If player clicks the leaving game button
     socket.on('leavingGame', () => {
         console.log("Player clicked the leaving game button. Disconnecting their socket")
@@ -168,7 +173,9 @@ io.on('connection', (socket) => {
         }
     })
 
-       // -----------------Playing The Game-----------------
+    // -----------------Playing The Game-----------------
+
+    // Starts the game
     socket.on('startGame', (code) => {
         console.log("Host is starting the game")
         let wordNum = Math.floor(Math.random() * words.length);
@@ -176,25 +183,17 @@ io.on('connection', (socket) => {
         rooms[code].isStarted = true
         io.in(code).emit("hostStartedGame", word)
     })
+
+    // Sets the timer for the game
     socket.on('startTimer', (code) => {
         console.log("Host is setting the timer for everyone")
         setTimeout(() => {
             io.in(code).emit("timerDone")
-        }, 5000)
+        }, 15000)
         
     })
 })
 
-
-// HELPER FUNCTIONS
-
-function deleteByValue(val) {
-    for (let s in socketRooms) {
-        if (socketRooms.hasOwnProperty(s) && socketRooms[s] === val) {
-            delete socketRooms[s];
-        }
-    }
-}
 
 
 http.listen(3000, () => console.log('listening on port 3000'));

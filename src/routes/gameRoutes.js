@@ -35,6 +35,10 @@ router.post('/submitAnswers', async (req, res) => {
 
         // Finds the game to get the players array
         Game.findOne({code: code}, async (err, game) => {
+            if (!game) {
+                console.log("Game has been deleted")
+                return res.status(422).send({error: "Game has been deleted"})
+            }
             let tempPlayers = game.players.slice()
             for (let i = 0; i < game.players.length; ++i) {
                 if (game.players[i].id === id) {
@@ -70,6 +74,10 @@ router.get('/otherPlayersData', async (req, res) => {
     }
     try {
         Game.findOne({code: code}, (err, game) => {
+            if (!game) {
+                console.log("Game has been deleted")
+                return res.status(422).send({error: "Game has been deleted"})
+            }
             console.log("sending players array to all players")
             res.send({players: game.players})
         })
