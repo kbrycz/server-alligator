@@ -37,7 +37,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '15MB' }));
 
 // Get all of the routes set up
-app.use(authRoutes)
 app.use(gameRoutes)
 
 // Get mongodb all set up with mongoose
