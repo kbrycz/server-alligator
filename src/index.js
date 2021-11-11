@@ -1,5 +1,4 @@
 // Gets the models all set up
-require('./models/User')
 require('./models/Game')
 
 
@@ -8,7 +7,6 @@ const express = require('express')
 const mongoose = require('mongoose')
 
 // import all of the api routes
-const authRoutes = require('./routes/authRoutes')
 const gameRoutes = require('./routes/gameRoutes')
 const secrets = require('./secrets')
 
