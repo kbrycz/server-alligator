@@ -128,6 +128,12 @@ io.on('connection', (socket) => {
         io.to(obj.code).emit('updatePlayersArray', obj.players)
     })
 
+    // Updates the ready up button
+    socket.on('updateReadyUp', (obj) => {
+        console.log("A player has ready upped")
+        io.to(obj.code).emit('updateReadyUp', obj.players)
+    })
+
     // -----------------Leaving The Game-----------------
 
     // If player clicks the leaving game button
